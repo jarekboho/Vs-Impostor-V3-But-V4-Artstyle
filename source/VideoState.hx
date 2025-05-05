@@ -9,7 +9,7 @@ import flixel.text.FlxText;
 import flixel.util.FlxColor;
 import flixel.util.FlxTimer;
 import lime.app.Application;
-import flixel.sound.FlxSound;
+import flixel.system.FlxSound;
 import openfl.utils.Assets;
 import openfl.utils.AssetType;
 
@@ -41,22 +41,16 @@ class VideoState extends MusicBeatState
 		
 		leSource = source;
 		transClass = toTrans;
-		if (frameSkipLimit != -1 && GlobalVideo.isWebm)
-		{
-			//GlobalVideo.getWebm().webm.SKIP_STEP_LIMIT = frameSkipLimit;	
-		}
 	}
+
+	var video:VideoHandler;
 	
 	override function create()
 	{
 		super.create();
 		FlxG.autoPause = false;
 		doShit = false;
-		
-		if (GlobalVideo.isWebm)
-		{
-		videoFrames = Std.parseInt(Assets.getText(leSource.replace(".webm", ".txt")));
-		}
+
 		//MARIO PRODU SMELLS
 		
 		fuckingVolume = FlxG.sound.music.volume;
@@ -68,46 +62,19 @@ class VideoState extends MusicBeatState
 		var bg:FlxSprite = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		add(bg);
 
-		if (GlobalVideo.isWebm)
-		{
-			if (Assets.exists(leSource.replace(".webm", ".ogg"), MUSIC) || Assets.exists(leSource.replace(".webm", ".ogg"), SOUND))
+		video = new VideoHandler();
+		video.playMP4(leSource, function(){
+			notDone = false;
+			FlxG.sound.music.volume = fuckingVolume;
+			if (musicPaused)
 			{
-				useSound = true;
-				vidSound = FlxG.sound.play(leSource.replace(".webm", ".ogg"));
+				musicPaused = false;
+				FlxG.sound.music.resume();
 			}
-		}
-
-		GlobalVideo.get().source(leSource);
-		GlobalVideo.get().clearPause();
-		if (GlobalVideo.isWebm)
-		{
-			GlobalVideo.get().updatePlayer();
-		}
-		GlobalVideo.get().show();
-		if (GlobalVideo.isWebm)
-		{
-			GlobalVideo.get().restart();
-		} else {
-			GlobalVideo.get().play();
-		}
-		
-		/*if (useSound)
-		{*/
-			//vidSound = FlxG.sound.play(leSource.replace(".webm", ".ogg"));
-		
-			/*new FlxTimer().start(0.1, function(tmr:FlxTimer)
-			{*/
-				vidSound.time = vidSound.length * soundMultiplier;
-				/*new FlxTimer().start(1.2, function(tmr:FlxTimer)
-				{
-					if (useSound)
-					{
-						vidSound.time = vidSound.length * soundMultiplier;
-					}
-				}, 0);*/
-				doShit = true;
-			//}, 1);
-		//}
+			FlxG.autoPause = true;
+			FlxG.switchState(transClass);
+		}, false);
+		add(video);
 		
 		if (autoPause && FlxG.sound.music != null && FlxG.sound.music.playing)
 		{
@@ -120,76 +87,29 @@ class VideoState extends MusicBeatState
 	{
 		super.update(elapsed);
 		
-		if (useSound)
-		{
-			var wasFuckingHit = GlobalVideo.get().webm.wasHitOnce;
-			soundMultiplier = GlobalVideo.get().webm.renderedCount / videoFrames;
-			
-			if (soundMultiplier > 1)
-			{
-				soundMultiplier = 1;
-			}
-			if (soundMultiplier < 0)
-			{
-				soundMultiplier = 0;
-			}
-			if (doShit)
-			{
-				var compareShit:Float = 50;
-				if (vidSound.time >= (vidSound.length * soundMultiplier) + compareShit || vidSound.time <= (vidSound.length * soundMultiplier) - compareShit)
-					vidSound.time = vidSound.length * soundMultiplier;
-			}
-			if (wasFuckingHit)
-			{
-			if (soundMultiplier == 0)
-			{
-				if (prevSoundMultiplier != 0)
-				{
-					vidSound.pause();
-					vidSound.time = 0;
-				}
-			} else {
-				if (prevSoundMultiplier == 0)
-				{
-					vidSound.resume();
-					vidSound.time = vidSound.length * soundMultiplier;
-				}
-			}
-			prevSoundMultiplier = soundMultiplier;
-			}
-		}
-		
 		if (notDone)
 		{
 			FlxG.sound.music.volume = 0;
 		}
-		GlobalVideo.get().update(elapsed);
 
-		if (controls.RESET)
-		{
-			GlobalVideo.get().restart();
-		}
-		
 		if (FlxG.keys.justPressed.P)
 		{
 			trace("PRESSED PAUSE");
-			GlobalVideo.get().togglePause();
-			if (GlobalVideo.get().paused)
+			if(video.paused)
+			video.resume();
+			else
+			video.pause();
+			if (video.paused)
 			{
-				GlobalVideo.get().alpha();
+				video.alpha2();
 			} else {
-				GlobalVideo.get().unalpha();
+				video.unalpha2();
 			}
 		}
 		
-		if (controls.ACCEPT || GlobalVideo.get().ended || GlobalVideo.get().stopped)
+		if (controls.ACCEPT)
 		{
-			GlobalVideo.get().hide();
-			GlobalVideo.get().stop();
-		}
-		
-		if (controls.ACCEPT || GlobalVideo.get().ended)
-		{
+			video.vlcClean();
 			notDone = false;
 			FlxG.sound.music.volume = fuckingVolume;
 			if (musicPaused)
@@ -200,15 +120,5 @@ class VideoState extends MusicBeatState
 			FlxG.autoPause = true;
 			FlxG.switchState(transClass);
 		}
-		
-		if (GlobalVideo.get().played || GlobalVideo.get().restarted)
-		{
-			GlobalVideo.get().show();
-		}
-		
-		GlobalVideo.get().restarted = false;
-		GlobalVideo.get().played = false;
-		GlobalVideo.get().stopped = false;
-		GlobalVideo.get().ended = false;
 	}
 }

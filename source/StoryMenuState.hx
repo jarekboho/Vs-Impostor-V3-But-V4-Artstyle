@@ -489,7 +489,8 @@ class StoryMenuState extends MusicBeatState
 			if (curWeek == 0) {
 				new FlxTimer().start(1, function(tmr:FlxTimer)
 				{
-					LoadingState.loadAndSwitchState(new VideoState('assets/videos/moogus/video.webm',new PlayState()));
+					FlxTransitionableState.skipNextTransIn = true;
+					LoadingState.loadAndSwitchState(new VideoState('assets/videos/polus1.mp4',new PlayState()));
 				});
 			}
 
